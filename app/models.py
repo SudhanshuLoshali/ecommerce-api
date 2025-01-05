@@ -54,4 +54,4 @@ class Order(Base):
     id = Column(Integer, primary_key=True, index=True)
     total_price = Column(Float)
     status = Column(String)
-    products = relationship("Product", secondary=order_products)
+    products = relationship("Product", secondary=order_products, lazy="joined")

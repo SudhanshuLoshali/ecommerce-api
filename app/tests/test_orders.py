@@ -3,28 +3,31 @@ Test module for order-related API endpoints.
 """
 
 from fastapi.testclient import TestClient
-from main import app
+from sqlalchemy import create_engine
+from app.main import app
+from app.models import Base
+import pytest
 
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
-def test_create_order():
-    """
-    Test order creation with valid data.
+@pytest.fixture
+def test_db():
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
 
-    Verifies:
-        - Successful order creation
-        - Correct calculation of total price
-        - Proper order status
-    """
+def test_create_order(test_db):
     client = TestClient(app)
-
-    # create a product
+    
+    # First create a product
     product_response = client.post(
         "/products/",
         json={"name": "Test Product", "description": "Test Description", "price": 99.99, "stock": 10},
     )
     product_id = product_response.json()["id"]
-
-    # create an order
+    
+    # Then create an order
     order_response = client.post(
         "/orders/",
         json={"products": [{"product_id": product_id, "quantity": 2}]},
@@ -34,25 +37,17 @@ def test_create_order():
     assert data["status"] == "pending"
     assert data["total_price"] == 199.98
 
-
-def test_create_order_insufficient_stock():
-    """
-    Test order creation with insufficient stock.
-
-    Verifies:
-        - Proper error handling for insufficient stock
-        - Correct error status code
-    """
+def test_create_order_insufficient_stock(test_db):
     client = TestClient(app)
-
+    
     # Create a product with low stock
     product_response = client.post(
         "/products/",
         json={"name": "Test Product", "description": "Test Description", "price": 99.99, "stock": 1},
     )
     product_id = product_response.json()["id"]
-
-    # order more than available stock
+    
+    # Try to order more than available stock
     order_response = client.post(
         "/orders/",
         json={"products": [{"product_id": product_id, "quantity": 2}]},

@@ -2,19 +2,19 @@
 Pydantic models for request/response validation.
 """
 
-from typing import List
+from typing import List, Annotated
 
-from pydantic import BaseModel, constr, confloat, conint
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class ProductBase(BaseModel):
     """
     Base schema for Product with common attributes.
     """
-    name: constr(min_length=1)
-    description: constr(min_length=1)
-    price: confloat(gt=0)
-    stock: conint(ge=0)
+    name: Annotated[str, Field(min_length=1)]
+    description: Annotated[str, Field(min_length=1)]
+    price: Annotated[float, Field(gt=0)]
+    stock: Annotated[int, Field(ge=0)]
 
 
 class ProductCreate(ProductBase):
@@ -29,9 +29,8 @@ class Product(ProductBase):
     Schema for product responses.
     """
     id: int
-
-    class Config:
-        orm_mode = True
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderItemCreate(BaseModel):
@@ -39,7 +38,7 @@ class OrderItemCreate(BaseModel):
     Schema for items within an order creation request.
     """
     product_id: int
-    quantity: conint(gt=0)
+    quantity: Annotated[int, Field(gt=0)]
 
 
 class OrderCreate(BaseModel):
@@ -57,6 +56,5 @@ class Order(BaseModel):
     total_price: float
     status: str
     products: List[Product]
-
-    class Config:
-        orm_mode = True
+    
+    model_config = ConfigDict(from_attributes=True)

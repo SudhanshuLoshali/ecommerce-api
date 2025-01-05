@@ -1,83 +1,84 @@
-# E-commerce-Platform
+# E-commerce Platform
 
-A simple e-commerce platform built with FastAPI.
+A simple e-commerce platform built with FastAPI, featuring product management and order processing.
 
 ## Features
 
 - Product management (listing and creation)
 - Order placement with stock validation
-- Exception handling
+- Exception handling for common scenarios
+- SQLite database with SQLAlchemy ORM
+- Docker containerization with data persistence
+- Health checks and monitoring
 - Test coverage
-- Dockerized deployment
 
 ## Prerequisites
 
 - Python 3.9+
-- Docker
+- Docker and Docker Compose
 - pip
+- curl (for healthchecks)
 
-## Local Development
+## Installation & Setup
+
+### Local Development
 
 1. Clone the repository:
 ```bash
 git clone <repository-url>
 cd ecommerce-api
 ```
-
 2. Create and activate a virtual environment:
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
-
 3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
-
 4. Run the application:
 ```bash
 uvicorn app.main:app --reload
 ```
+The API will be available at ```http://localhost:8000```
 
-## Docker Deployment
-
-### Using Docker
-
-1. Build the image:
+### Docker Deployment
+1. Using Docker:
 ```bash
+# Build the image
 docker build -t ecommerce-api .
-```
 
-2. Run the container:
-```bash
+# Run the container
 docker run -d \
   --name ecommerce-api \
   -p 8000:8000 \
-  -e DATABASE_URL=sqlite:///./data/ecommerce.db \
-  -e PORT=8000 \
+  -v db-data:/app/data \
   ecommerce-api
 ```
 
-### Using Docker Compose
-
-1. Start the services:
+2. Using Docker Compose:
 ```bash
+# Start services
 docker-compose up -d
-```
 
-2. View logs:
-```bash
+# View logs
 docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
 ```
 
-### Environment Variables
+## Environment Variables
 
 The following environment variables can be configured:
 
 - `PORT`: Application port (default: 8000)
 - `HOST`: Application host (default: 0.0.0.0)
-- `DATABASE_URL`: Database connection string (default: sqlite:///./ecommerce.db)
+- `DATABASE_URL`: Database connection string (sqlite:///./data/ecommerce.db)
 
 ## API Documentation
 
@@ -85,11 +86,25 @@ Once the application is running, you can access:
 - API documentation: http://localhost:8000/docs
 - Alternative API documentation: http://localhost:8000/redoc
 
-### Endpoints
+## Endpoints
 
 - `GET /products`: Retrieve all products
 - `POST /products`: Create a new product
 - `POST /orders`: Place a new order
+
+
+## Data Persistence
+The application uses SQLite with data stored in a Docker volume. To manage volumes:
+```bash
+# List volumes
+docker volume ls
+
+# Inspect volume
+docker volume inspect db-data
+
+# Remove volume
+docker volume rm db-data
+```
 
 ## Testing
 
@@ -100,8 +115,16 @@ pytest
 
 ## Error Handling
 
-The API implements comprehensive error handling for:
-- Insufficient stock
-- Product not found
-- Invalid input data
-- Database errors
+| Error | Status Code | Description |
+|-------|-------------|-------------|
+| ProductNotFoundException | 404 | Product not found |
+| InsufficientStockException | 400 | Not enough stock available |
+| ValidationError | 422 | Invalid input data |
+| DatabaseError | 500 | Database operation failed |
+
+## Health Checks
+The application includes Docker health checks that:
+- Run every 30 seconds
+- Timeout after 30 seconds
+- Have 3 retries
+- Have a 5-second start period
